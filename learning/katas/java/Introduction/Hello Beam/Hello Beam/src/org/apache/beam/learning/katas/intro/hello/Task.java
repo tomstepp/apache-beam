@@ -39,11 +39,8 @@ public class Task {
   public static void main(String[] args) {
     PipelineOptions options = PipelineOptionsFactory.fromArgs(args).create();
     Pipeline pipeline = Pipeline.create(options);
-
     PCollection<String> output = setupPipeline(pipeline);
-
     output.apply(Log.ofElements());
-
     pipeline.run();
   }
 
