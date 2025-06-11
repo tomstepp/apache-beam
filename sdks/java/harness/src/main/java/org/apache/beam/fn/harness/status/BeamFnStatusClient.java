@@ -64,18 +64,18 @@ public class BeamFnStatusClient implements AutoCloseable {
       BundleProcessorCache processBundleCache,
       PipelineOptions options,
       Cache<?, ?> cache) {
-    this.channel = channelFactory.apply(apiServiceDescriptor);
-    this.outboundObserver =
-        BeamFnWorkerStatusGrpc.newStub(channel).workerStatus(new InboundObserver());
     this.processBundleCache = processBundleCache;
-    this.memoryMonitor = MemoryMonitor.fromOptions(options);
     this.cache = cache;
     this.inboundObserverCompletion = new CompletableFuture<>();
+    this.memoryMonitor = MemoryMonitor.fromOptions(options);
     Thread thread = new Thread(memoryMonitor);
     thread.setDaemon(true);
     thread.setPriority(Thread.MIN_PRIORITY);
     thread.setName("MemoryMonitor");
     thread.start();
+    this.channel = channelFactory.apply(apiServiceDescriptor);
+    this.outboundObserver =
+        BeamFnWorkerStatusGrpc.newStub(channel).workerStatus(new InboundObserver());
   }
 
   @Override
@@ -161,7 +161,11 @@ public class BeamFnStatusClient implements AutoCloseable {
   String getMemoryUsage() {
     StringJoiner memory = new StringJoiner("\n");
     memory.add("========== MEMORY USAGE ==========");
-    memory.add(memoryMonitor.describeMemory());
+    if (memoryMonitor == null) {
+      memory.add("Unknown. Memory monitor is unavailable, possibly due to worker startup or shutdown.")
+    } else {
+      memory.add(memoryMonitor.describeMemory());
+    }
     return memory.toString();
   }
 
